@@ -254,6 +254,51 @@
         @keyframes spin {
             to { transform: translateY(-50%) rotate(360deg); }
         }
+
+        /* Footer Styles */
+        .footer {
+            position: fixed;
+            bottom: 20px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.55);
+            backdrop-filter: blur(12px);
+            border-top: 0.5px solid rgba(37, 99, 235, 0.04);
+            z-index: 1000;
+            box-shadow: 0 4px 24px 0 rgba(31, 38, 135, 0.04);
+        }
+
+        .footer a {
+            color: var(--primary-color);
+            text-decoration: none;
+            margin: 0 15px;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .footer a:hover {
+            transform: translateY(-2px);
+            color: var(--secondary-color);
+        }
+
+        .footer a i {
+            margin-right: 8px;
+        }
+
+        .footer .divider {
+            color: #94a3b8;
+            margin: 0 10px;
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0.7); opacity: 0; }
+            80% { transform: scale(1.05); opacity: 1; }
+            100% { transform: scale(1); }
+        }
     </style>
 </head>
 <body>
@@ -293,6 +338,47 @@
         <div id="message"></div>
     </div>
 
+    <!-- Footer -->
+    <div class="footer">
+        <a href="https://www.linkedin.com/in/sourabh-dey-049a22204/" target="_blank">
+            <i class="fab fa-linkedin"></i> Connect on LinkedIn
+        </a>
+        <span class="divider">|</span>
+        <a href="#" id="paytmSupportBtn">
+            <i class="fas fa-heart"></i> Support via Paytm
+        </a>
+    </div>
+
+    <!-- Paytm Modal -->
+    <div class="modal fade" id="paytmModal" tabindex="-1" aria-labelledby="paytmModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="paytmModalLabel">Support via Paytm</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body text-center" style="background: linear-gradient(135deg, #e0e7ff 0%, #f0fdfa 100%); border-radius: 0 0 12px 12px;">
+            <div style="font-size: 1.2rem; font-weight: 600; color: #2563eb; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+              <i class="fas fa-heart" style="color: #e11d48; font-size: 1.3em;"></i>
+              Thank you for supporting!
+            </div>
+            <div style="display: flex; justify-content: center;">
+              <div id="paytmCard" style="background: white; border-radius: 20px; box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.18); padding: 24px 18px 18px 18px; margin-bottom: 18px; display: inline-block; animation: popIn 0.7s cubic-bezier(.68,-0.55,.27,1.55);">
+                <img src="/static/paytm.png" alt="Paytm QR Code for Sourabh Dey" style="max-width: 220px; width: 100%; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); margin-bottom: 0;">
+              </div>
+            </div>
+            <div style="font-size: 1.08rem; margin-bottom: 8px; font-weight: 500; color: #2563eb;">Scan to Support</div>
+            <div id="upiBox" style="font-size: 1rem; color: #2563eb; background: #f1f5f9; padding: 8px 16px; border-radius: 8px; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 1px 4px rgba(37,99,235,0.07);">
+              <span id="upiId">7838102742@ptsbi</span>
+              <button id="copyBtn" onclick="copyUPI()" class="btn btn-sm btn-outline-primary" style="font-size:0.9em;">Copy</button>
+              <span id="copyCheck" style="display:none; color: #22c55e; font-size: 1.2em; margin-left: 4px;"><i class='fas fa-check-circle'></i></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         document.getElementById('userForm').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -344,6 +430,22 @@
                 button.innerHTML = originalContent;
             }
         });
+
+        // Paytm Modal logic
+        document.getElementById('paytmSupportBtn').addEventListener('click', function(e) {
+            e.preventDefault();
+            var paytmModal = new bootstrap.Modal(document.getElementById('paytmModal'));
+            paytmModal.show();
+        });
+
+        // UPI Copy logic with feedback
+        function copyUPI() {
+          navigator.clipboard.writeText('7838102742@ptsbi');
+          document.getElementById('copyCheck').style.display = 'inline';
+          setTimeout(function() {
+            document.getElementById('copyCheck').style.display = 'none';
+          }, 1500);
+        }
     </script>
 </body>
 </html> 
