@@ -1,0 +1,4 @@
+flask==2.3.3
+kubernetes==28.1.0
+python-dotenv==1.0.0
+cryptography==41.0.3 
