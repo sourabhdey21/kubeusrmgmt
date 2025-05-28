@@ -12,6 +12,7 @@ from cryptography.hazmat.primitives import hashes
 import datetime
 from kubernetes.config.kube_config import KUBE_CONFIG_DEFAULT_LOCATION
 import time
+from dotenv import load_dotenv
 
 app = Flask(__name__)
 
@@ -20,6 +21,8 @@ try:
     config.load_incluster_config()  # Try to load in-cluster config
 except:
     config.load_kube_config()  # Fall back to local kubeconfig
+
+load_dotenv()
 
 def generate_certificate(username, role):
     # Generate private key
@@ -65,7 +68,7 @@ def generate_certificate(username, role):
     
     return private_key_pem, cert_pem
 
-def create_rbac_resources(username, role):
+def create_rbac_resources(username, role, custom_permissions=None):
     core_v1 = client.CoreV1Api()
     rbac_v1 = client.RbacAuthorizationV1Api()
     
@@ -93,7 +96,7 @@ def create_rbac_resources(username, role):
                 )]
             )
             rbac_v1.create_cluster_role_binding(body=binding)
-        else:  # readonly
+        elif role == "readonly":
             role_ref = client.V1RoleRef(
                 kind="ClusterRole",
                 name="view",
@@ -109,7 +112,37 @@ def create_rbac_resources(username, role):
                 )]
             )
             rbac_v1.create_cluster_role_binding(body=binding)
-            
+        elif role == "custom" and custom_permissions:
+            # Create a Role with custom rules
+            rules = [client.V1PolicyRule(
+                api_groups=[""],
+                resources=custom_permissions.get("resources", []),
+                verbs=custom_permissions.get("verbs", [])
+            )]
+            role = client.V1Role(
+                metadata=client.V1ObjectMeta(name=f"{username}-custom-role", namespace="default"),
+                rules=rules
+            )
+            rbac_v1.create_namespaced_role(namespace="default", body=role)
+            # Bind the Role to the ServiceAccount
+            role_ref = client.V1RoleRef(
+                kind="Role",
+                name=f"{username}-custom-role",
+                api_group="rbac.authorization.k8s.io"
+            )
+            binding = client.V1RoleBinding(
+                metadata=client.V1ObjectMeta(name=f"{username}-custom-binding", namespace="default"),
+                role_ref=role_ref,
+                subjects=[client.V1Subject(
+                    kind="ServiceAccount",
+                    name=username,
+                    namespace="default"
+                )]
+            )
+            rbac_v1.create_namespaced_role_binding(namespace="default", body=binding)
+        else:
+            raise Exception("Invalid role or missing custom permissions")
+        
         # Get the ServiceAccount token
         secret_name = f"{username}-token"
         secret = client.V1Secret(
@@ -137,7 +170,15 @@ def create_rbac_resources(username, role):
         # Clean up if there's an error
         try:
             core_v1.delete_namespaced_service_account(name=username, namespace="default")
-            rbac_v1.delete_cluster_role_binding(name=f"{username}-binding")
+            try:
+                rbac_v1.delete_cluster_role_binding(name=f"{username}-binding")
+            except:
+                pass
+            try:
+                rbac_v1.delete_namespaced_role(name=f"{username}-custom-role", namespace="default")
+                rbac_v1.delete_namespaced_role_binding(name=f"{username}-custom-binding", namespace="default")
+            except:
+                pass
             core_v1.delete_namespaced_secret(name=secret_name, namespace="default")
         except:
             pass
@@ -227,13 +268,14 @@ def create_user():
     data = request.json
     username = data.get('username')
     role = data.get('role')
+    custom_permissions = data.get('customPermissions')
     
-    if not username or role not in ['admin', 'readonly']:
+    if not username or (role not in ['admin', 'readonly', 'custom']):
         return jsonify({'error': 'Invalid input'}), 400
     
     try:
         # Create RBAC resources and get token
-        token = create_rbac_resources(username, role)
+        token = create_rbac_resources(username, role, custom_permissions)
         
         # Get cluster information
         v1 = client.CoreV1Api()

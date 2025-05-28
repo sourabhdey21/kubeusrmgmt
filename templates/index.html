@@ -329,7 +329,32 @@
                 <select class="form-control" id="role" required>
                     <option value="admin">Admin</option>
                     <option value="readonly">Read Only</option>
+                    <option value="custom">Custom</option>
                 </select>
+            </div>
+            <div class="form-group" id="custom-permissions" style="display:none;">
+                <label><i class="fas fa-cogs"></i> Custom Permissions</label>
+                <div style="margin-bottom: 8px; font-size: 0.97em; color: #64748b;">Select the resources and actions for this user:</div>
+                <div class="row">
+                    <div class="col-6">
+                        <strong>Resources</strong><br>
+                        <div><input type="checkbox" class="resource" value="pods" checked> Pods</div>
+                        <div><input type="checkbox" class="resource" value="services"> Services</div>
+                        <div><input type="checkbox" class="resource" value="deployments"> Deployments</div>
+                        <div><input type="checkbox" class="resource" value="configmaps"> ConfigMaps</div>
+                        <div><input type="checkbox" class="resource" value="secrets"> Secrets</div>
+                        <div><input type="checkbox" class="resource" value="namespaces"> Namespaces</div>
+                    </div>
+                    <div class="col-6">
+                        <strong>Actions</strong><br>
+                        <div><input type="checkbox" class="verb" value="get" checked> Get</div>
+                        <div><input type="checkbox" class="verb" value="list" checked> List</div>
+                        <div><input type="checkbox" class="verb" value="watch"> Watch</div>
+                        <div><input type="checkbox" class="verb" value="create"> Create</div>
+                        <div><input type="checkbox" class="verb" value="update"> Update</div>
+                        <div><input type="checkbox" class="verb" value="delete"> Delete</div>
+                    </div>
+                </div>
             </div>
             <button type="submit" class="btn btn-primary w-100">
                 <i class="fas fa-user-plus"></i> Create User
@@ -389,6 +414,12 @@
             
             const username = document.getElementById('username').value;
             const role = document.getElementById('role').value;
+            let customPermissions = null;
+            if (role === 'custom') {
+                const resources = Array.from(document.querySelectorAll('.resource:checked')).map(cb => cb.value);
+                const verbs = Array.from(document.querySelectorAll('.verb:checked')).map(cb => cb.value);
+                customPermissions = { resources, verbs };
+            }
             const messageDiv = document.getElementById('message');
 
             try {
@@ -397,7 +428,7 @@
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ username, role })
+                    body: JSON.stringify({ username, role, customPermissions })
                 });
 
                 if (response.ok) {
@@ -446,6 +477,15 @@
             document.getElementById('copyCheck').style.display = 'none';
           }, 1500);
         }
+
+        // Show/hide custom permissions UI
+        document.getElementById('role').addEventListener('change', function() {
+            if (this.value === 'custom') {
+                document.getElementById('custom-permissions').style.display = '';
+            } else {
+                document.getElementById('custom-permissions').style.display = 'none';
+            }
+        });
     </script>
 </body>
 </html> 

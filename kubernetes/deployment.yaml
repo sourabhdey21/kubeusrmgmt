@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kubeusrmgmt-web
+  namespace: kubeusrmgmt
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: kubeusrmgmt-web
+  template:
+    metadata:
+      labels:
+        app: kubeusrmgmt-web
+    spec:
+      containers:
+        - name: web
+          image: sourabhdey21700/kubeusrmgmt:latest
+          ports:
+            - containerPort: 5001
+          env:
+            - name: KUBECONFIG
+              value: /kubeconfig/config
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          volumeMounts:
+            - name: kubeconfig
+              mountPath: /kubeconfig
+      volumes:
+        - name: kubeconfig
+          configMap:
+            name: kubeusrmgmt-kubeconfig 
